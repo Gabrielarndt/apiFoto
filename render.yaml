@@ -1,0 +1,12 @@
+services:
+  - type: worker
+    name: whatsapp-api
+    env: node
+    plan: free
+    branch: main
+    buildCommand: "npm install"
+    startCommand: "node index.js"
+    autoDeploy: true
+    envVars:
+      - key: BUN_INSTALL
+        value: false
