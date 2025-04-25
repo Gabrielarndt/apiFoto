@@ -5,6 +5,16 @@ const express = require('express');
 const app = express();
 const port = process.env.PORT || 3000;
 
+const { chromium } = require('playwright'); // substitui puppeteer
+
+(async () => {
+  const browser = await chromium.launch({ headless: true });
+  const page = await browser.newPage();
+  await page.goto('https://web.whatsapp.com');
+  // continue seu processo aqui
+})();
+
+
 const client = new Client({
   authStrategy: new LocalAuth(),
   puppeteer: {
