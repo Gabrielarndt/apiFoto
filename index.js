@@ -1,53 +1,42 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const express = require('express');
-
 const app = express();
-const port = process.env.PORT || 3000;
-
-const { chromium } = require('playwright'); // substitui puppeteer
-
-(async () => {
-  const browser = await chromium.launch({ headless: true });
-  const page = await browser.newPage();
-  await page.goto('https://web.whatsapp.com');
-  // continue seu processo aqui
-})();
-
+const PORT = process.env.PORT || 10000;
 
 const client = new Client({
-  authStrategy: new LocalAuth(),
-  puppeteer: {
-    executablePath: '/usr/bin/google-chrome-stable', // caminho do navegador no Render
-    args: ['--no-sandbox'],
-    headless: true
-  }
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        executablePath: require('playwright').chromium.executablePath(),
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }
 });
 
 client.on('qr', (qr) => {
-  qrcode.generate(qr, { small: true });
-  console.log('📲 Escaneie o QR code!');
+    console.log('📱 Escaneie o QR code abaixo para logar no WhatsApp:');
+    qrcode.generate(qr, { small: true });
 });
 
 client.on('ready', () => {
-  console.log('✅ Conectado ao WhatsApp!');
+    console.log('✅ Cliente pronto!');
 });
 
 client.initialize();
 
-app.get('/foto', async (req, res) => {
-  const numero = req.query.numero;
-  if (!numero) return res.status(400).json({ error: 'Número não informado' });
+// Rota para pegar foto de perfil
+app.get('/foto/:numero', async (req, res) => {
+    const numero = req.params.numero;
+    const contato = `${numero}@c.us`;
 
-  try {
-    const contato = await client.getContactById(`${numero}@c.us`);
-    const foto = await contato.getProfilePicUrl();
-    res.json({ numero, foto });
-  } catch (err) {
-    res.status(500).json({ error: 'Erro ao buscar foto', detalhe: err.toString() });
-  }
+    try {
+        const ppUrl = await client.getProfilePicUrl(contato);
+        res.json({ foto: ppUrl });
+    } catch (err) {
+        res.status(404).json({ erro: 'Não foi possível obter a foto.' });
+    }
 });
 
-app.listen(port, () => {
-  console.log(`🚀 Servidor rodando na porta ${port}`);
+app.listen(PORT, () => {
+    console.log(`🚀 Servidor rodando na porta ${PORT}`);
 });
